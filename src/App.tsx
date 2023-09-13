@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import handleMarkdown from './markdown-parser';
 
 function App() {
 
   const [markdownContent, setMarkdownContent] = useState('')
+  const [contentToRender, setContentToRender] = useState('')
 
   useEffect(() => {
     async function fetchMarkdownFile() {
@@ -19,15 +20,30 @@ function App() {
 
     fetchMarkdownFile();
   }, []);
-  
+
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex <= markdownContent.length) {
+        setContentToRender(markdownContent.substring(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 20);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [markdownContent]);
   
   return (
-    <div className='flex gap-4 my-2 mx-4'>
-      <div className='text-sm w-25'>
+    <div className='flex gap-[20px] my-2 mx-4'>
+      <div className='w-[700px]'>
         {markdownContent.split('\n').map((p, idx) => p === '' ? <br key={idx} /> : <p key={idx}>{p}</p>)}
       </div>
-      <div>
-        {handleMarkdown(markdownContent)}
+      <div className='w-[700px]'>
+        {handleMarkdown(contentToRender)}
       </div>
     </div>
   )

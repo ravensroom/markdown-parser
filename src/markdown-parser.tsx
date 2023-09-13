@@ -254,6 +254,18 @@ export function parse(
 
   // span-level parsing - inside-one-line: bold, italic, strike-through, inline-code, link
 
+  // check for inline code
+  if (/`([^`]+)`/.test(line)) {
+    const { pre, target, post } = seperator(/`([^`]+)`/g, line, 'code')
+    return (
+      <span key={`inlcd-${index}`}>
+        <span>{parse(pre, options, index + 1)}{` `}</span>
+        <span className='bg-gray-200 font-bold text-sm rounded-[4px] px-1'>{parse(target, options, index + 1)}</span>
+        <span>{` `}{parse(post, options, index + 1)}</span>
+      </span>
+    )
+  }
+
   // check for bold
   if (/\*\*(.*?)\*\*/.test(line)) {
     const {pre, target, post} = seperator(/\*\*(.*?)\*\*/g, line, 'n')
@@ -293,18 +305,6 @@ export function parse(
         <span>{` `}{parse(post, options, index + 1)}</span>
       </span>
     );
-  }
-
-  // check for inline code
-  if (/`([^`]+)`/.test(line)) {
-    const { pre, target, post } = seperator(/`([^`]+)`/g, line, 'code')
-    return (
-      <span key={`inlcd-${index}`}>
-        <span>{parse(pre, options, index + 1)}{` `}</span>
-        <span className='bg-gray-200 font-bold text-sm rounded-[4px] px-1'>{parse(target, options, index + 1)}</span>
-        <span>{` `}{parse(post, options, index + 1)}</span>
-      </span>
-    )
   }
 
   // check for links
