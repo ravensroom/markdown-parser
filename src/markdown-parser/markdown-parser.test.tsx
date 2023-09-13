@@ -110,4 +110,29 @@ describe('span-level parsing - inside-one-line: bold, italic, strike-through, in
       expect(linkElement).toHaveAttribute('href', 'https://www.google.com');
     });
   });
+
+  describe('special styles inside a styled span should be ignored', () => {
+    test('no parsing of styles inside inline-code', () => {
+      const md =
+        'This is `inline code block with **bold** and *italic* and ~~strike-through~~ and [link](https://www.google.com)` inside.';
+      const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+      render(parsed);
+      expect(
+        screen.getByText(
+          'inline code block with **bold** and *italic* and ~~strike-through~~ and [link](https://www.google.com)'
+        )
+      ).toBeInTheDocument();
+    });
+
+    test('no parsing of styles inside boldness', () => {
+      const md = `This is **boldness with *italic* and ~~strike-through~~ and [link](https://www.google.com)** inside.`;
+      const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+      render(parsed);
+      expect(
+        screen.getByText(
+          'boldness with *italic* and ~~strike-through~~ and [link](https://www.google.com)'
+        )
+      ).toBeInTheDocument();
+    });
+  });
 });

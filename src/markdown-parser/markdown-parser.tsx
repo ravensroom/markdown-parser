@@ -219,12 +219,12 @@ export function parse(
 
   // check for inline code
   if (/`([^`]+)`/.test(line)) {
-    const { pre, target, post } = seperator(/`([^`]+)`/g, line, 'code');
+    const { pre, target, post } = seperator(/`([^`]+)`/g, line);
     return (
       <span key={`inlcd-${index}`}>
         <span>{parse(pre, options, index + 1)}</span>
-        <span className="bg-gray-200 font-bold text-sm rounded-[4px] px-1">
-          {parse(target, options, index + 1)}
+        <span className="bg-gray-200 text-gray-600 text-xs rounded-[4px] px-1">
+          <code>{target}</code>
         </span>
         <span>{parse(post, options, index + 1)}</span>
       </span>
@@ -233,7 +233,7 @@ export function parse(
 
   // check for bold
   if (/\*\*(.*?)\*\*/.test(line)) {
-    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, line, 'n');
+    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, line);
     return (
       <span>
         <span>{parse(pre, options, index + 1)}</span>
@@ -247,7 +247,7 @@ export function parse(
 
   // check for italic
   if (/\*(.*?)\*/.test(line)) {
-    const { pre, target, post } = seperator(/\*(.*?)\*/g, line, 'n');
+    const { pre, target, post } = seperator(/\*(.*?)\*/g, line);
     return (
       <span key={`italic-${index}`}>
         <span>{parse(pre, options, index + 1)}</span>
@@ -259,7 +259,7 @@ export function parse(
 
   // check for strike through
   if (/~~(.*?)~~/.test(line)) {
-    const { pre, target, post } = seperator(/~~(.*?)~~/g, line, 'n');
+    const { pre, target, post } = seperator(/~~(.*?)~~/g, line);
     return (
       <span key={`strikethrough-${index}`}>
         <span>{parse(pre, options, index + 1)}</span>
@@ -270,49 +270,25 @@ export function parse(
   }
 
   // check for links
-  /* eslint-disable */
   if (/\[([^\]]+)\]\(([^\)]+)\)/.test(line)) {
     const { pre, target, post } = seperator(/\[([^\]]+)\]\(([^\)]+)\)/g, line, 'a');
-    /* eslint-enable */
+    const [linkName, href] = target.split(', ');
     return (
       <span key={`link-${index}`}>
         <span>{parse(pre, options, index + 1)}</span>
-        <span>{parse(target, options, index + 1)}</span>
+        <span>
+          <a
+            href={href}
+            key={`link-${index}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: 'cadetblue', textDecoration: 'underline' }}>
+            {linkName}
+          </a>
+        </span>
         <span>{parse(post, options, index + 1)}</span>
       </span>
     );
-  }
-
-  // helpers
-
-  // check for <a> element
-  if (line.trim().includes('<a ')) {
-    const regex = /<a\s+href="([^"]+)">(.*?)<\/a>/;
-    const match = line.match(regex);
-
-    if (match) {
-      const href = match[1];
-      const content = match[2];
-      return (
-        <a
-          href={href}
-          key={`link-${index}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ marginLeft, color: 'cadetblue', textDecoration: 'underline' }}>
-          {content}
-        </a>
-      );
-    }
-  }
-
-  // check for <code> elements
-  if (line.trim().includes('<code>')) {
-    const regex = /<code>(.*?)<\/code>/;
-    const content = line.replace(regex, '$1');
-    if (content) {
-      return <code key={`code-${index}`}>{content}</code>;
-    }
   }
 
   // check for line break
@@ -322,7 +298,7 @@ export function parse(
   return <span>{line}</span>;
 }
 
-function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' | 'code') {
+function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' = 'n') {
   const wrapper = line.match(pattern)![0];
   const wrapperIdx = line.indexOf(wrapper);
   const pre = line.slice(0, wrapperIdx);
@@ -332,10 +308,7 @@ function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' | 'code'
     target = wrapper.replace(pattern, '$1');
   }
   if (targetType === 'a') {
-    target = wrapper.replace(pattern, '<a href="$2">$1</a>');
-  }
-  if (targetType === 'code') {
-    target = wrapper.replace(pattern, '<code>$1</code>');
+    target = wrapper.replace(pattern, '$1, $2');
   }
   return {
     pre,

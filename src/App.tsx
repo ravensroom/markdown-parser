@@ -43,7 +43,7 @@ function App() {
           .map((p, idx) => (p === '' ? <br key={idx} /> : <p key={idx}>{p}</p>))}
       </div>
       <div className="w-[650px] text-lg text-[#3c4043] font-EBGaramond">
-        {handleMarkdown(contentToRender)}
+        {handleMarkdown(markdownContent)}
       </div>
     </div>
   );
