@@ -24,7 +24,7 @@ export interface ParseOptions {
   cb: {
     inCodeBlock: boolean,
     codeBlockLang: string | null,
-    codeBlock: string[]
+    code: string[],
   }
   tb: {
     inTable: boolean,
@@ -36,8 +36,7 @@ export function parse(
   lineInput: string,
   options: ParseOptions,
   index = 0,
-
-): React.ReactNode {
+): React.ReactNode | 'cb' | 'tb' | null {
 
   const line: string = lineInput.trimEnd();
   const { cb, tb } = options;
@@ -50,95 +49,41 @@ export function parse(
   // check for code block
   if (/^```(\S+)?/.test(line)) {
     cb.inCodeBlock = !cb.inCodeBlock;
-    // code block starts, mark the language
+    // code block starts, send render signal
     if (cb.inCodeBlock) {
-      cb.codeBlockLang = line.match(/^```(\S+)?/)?.[1] || null;
-      return null
-    } 
-    // code block ends, render the completed code
-    const code = cb.codeBlock.join('\n');
-    const lang = cb.codeBlockLang || ''
-    cb.codeBlock = []
-    cb.codeBlockLang = null
-
-    const copyCode = async () => {
-      try {
-        await navigator.clipboard.writeText(code);
-        alert('code copied!')
-      } catch (error) {
-        console.error('Failed to copy code:', error);
-      }
+      cb.codeBlockLang = line.match(/^```(\S+)?/)?.[1] || '';
+      return 'cb'
     };
-
-    return (
-      <div className='rounded-sm text-sm'>
-        <div className='flex justify-between items-center text-xs bg-gray-100 px-2 py-1 font-semibold text-gray-500'>
-          <span>{lang}</span>
-          <button className='bg-gray-300 p-1 hover:bg-gray-200' onClick={copyCode}>copy</button>
-        </div>
-        <SyntaxHighlighter style={oneDark} language={lang} customStyle={{ margin: '0'}}>{code}</SyntaxHighlighter>
-      </div>
-    );
+      
+    // code block ends, clear up the code block state
+    cb.code = []
+    cb.codeBlockLang = null
+    return null
   }
 
   if (cb.inCodeBlock) {
-    cb.codeBlock.push(line);
+    cb.code.push(line);
     return null
   }
 
   // check for table
   if (/^\|(.+\|)+/.test(line)) {
     if (!tb.inTable) {
+      // table starts, send render signal
       tb.inTable = true
+      tb.tableRows.push(line)
+      return 'tb' 
     }
     tb.tableRows.push(line)
     return null
   }
 
-  // not matching table format, turn the flag off and start rendering
+  // not matching table format, clear up the table state
   if (tb.inTable) {
     tb.inTable = false
-
-    const headerRow = tb.tableRows[0]!
-    const bodyRows = tb.tableRows.slice(2)!
     tb.tableRows = []
-
-    const headerColumns = headerRow
-        .substring(1, headerRow.length - 1)
-        .split("|")
-        .map((column) => column.trim());
-    const tableHead = (
-        <thead>
-          <tr>
-            {headerColumns.map((column) => (
-              <th className='px-2 py-1 border-l-2 border-b-2 border-zinc-200'>{column}</th>
-            ))}
-          </tr>
-        </thead>
-      );
-    const tableBody = (
-        <tbody>
-          {bodyRows.map((row) => (
-            <tr>
-              {row
-                .substring(1, row.length - 1)
-                .split("|")
-                .map((cell, cellIndex) => (
-                  <td className='px-2 py-1 border-l-2 border-b-2 border-zinc-200'>{cell.trim()}</td>
-                ))}
-            </tr>
-          ))}
-        </tbody>
-      );
-    
-    return (
-      <table className='border-r-2 border-t-2 p-2 border-zinc-200 text-sm w-auto'>
-        {tableHead}
-        {tableBody}
-      </table>
-    )
+    return null
   }
-
 
   // block-level parsing - one-line block: h, li, blockquote, hr, img
 
@@ -384,17 +329,104 @@ function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' | 'code'
     }
 }
 
+function CodeBlock({ lang, code } : {
+  lang: string,
+  code: string[] | null
+}) {
+  const copyCode = async () => {
+    if (code === null) return
+    try {
+      await navigator.clipboard.writeText(code.join('\n'));
+      alert('code copied!')
+    } catch (error) {
+      console.error('Failed to copy code:', error);
+    }
+  }
+  return (
+    <div className='rounded-sm text-sm'>
+      <div className='flex justify-between items-center text-xs bg-gray-100 px-2 py-1 font-semibold text-gray-500'>
+        <span>{lang}</span>
+        <button className='bg-gray-300 p-1 hover:bg-gray-200' onClick={copyCode}>copy</button>
+      </div>
+      {
+        code === null ? null : (
+          <SyntaxHighlighter style={oneDark} language={lang} customStyle={{ margin: '0'}}>{code.join('\n')}</SyntaxHighlighter>
+        )
+      }
+    </div>
+  )
+}
+
+function Table({ tableRows } : { tableRows: string[]}) {
+  if (!tableRows.length) return null
+
+  const headerRow = tableRows[0]!
+  const headerColumns = headerRow
+      .substring(1, headerRow.length - 1)
+      .split("|")
+      .map((column) => column.trim());
+  const tableHead = (
+      <thead>
+        <tr>
+          {headerColumns.map((column) => (
+            <th className='px-2 py-1 border-l-2 border-b-2 border-zinc-200'>{column}</th>
+          ))}
+        </tr>
+      </thead>
+    );
+    if (tableRows.length <= 2 ) return (
+      <table className='border-r-2 border-t-2 p-2 border-zinc-200 text-sm w-auto'>
+        {tableHead}
+      </table>
+    )
+
+    const bodyRows = tableRows.slice(2)!
+    const tableBody = (
+        <tbody>
+          {bodyRows.map((row) => (
+            <tr>
+              {row
+                .substring(1, row.length - 1)
+                .split("|")
+                .map((cell, cellIndex) => (
+                  <td className='px-2 py-1 border-l-2 border-b-2 border-zinc-200'>{cell.trim()}</td>
+                ))}
+            </tr>
+          ))}
+        </tbody>
+      );
+    
+    return (
+      <table className='border-r-2 border-t-2 p-2 border-zinc-200 text-sm w-auto'>
+        {tableHead}
+        {tableBody}
+      </table>
+    )
+}
+
 export default function handleMarkdown(value: string) {
   const cb = {
     inCodeBlock: false,
     codeBlockLang: null,
-    codeBlock: []
+    code: []
   }
   const tb = {
     inTable: false,
     tableRows: []
   }
-  return value.split('\n').map((chunk) => parse(chunk, {
-    cb, tb
-  }));
+  return value.split('\n').map((chunk) => {
+      const res = parse(chunk, {
+        cb, tb
+      })
+
+      if (res === 'cb') {
+        return <CodeBlock lang={cb.codeBlockLang!} code={cb.code} />
+      }
+
+      if (res === 'tb') {
+        return  <Table tableRows={tb.tableRows} />
+      }
+
+      return res
+  });
 }
