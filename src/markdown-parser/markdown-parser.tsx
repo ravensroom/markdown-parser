@@ -38,8 +38,6 @@ export function parse(
   index = 0
 ): React.ReactNode | 'cb' | 'tb' | null {
   const { cb, tb } = options;
-  const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0; // Count preceding spaces
-  const marginLeft = `${precedingSpaces * 10}px`;
 
   // block-level parsing - multi-line block: codeBlock, table
 
@@ -91,7 +89,6 @@ export function parse(
     return (
       <div
         style={{
-          marginLeft,
           fontSize: `${1.5 - level * 0.2}em`,
           fontWeight: 'bold',
           padding: '5px 0',
@@ -101,88 +98,40 @@ export function parse(
     );
   }
 
-  // check for unordered list
-  if (/^(\*|-)\s/.test(line)) {
-    const text = line.replace(/^(\*|-)\s/, '');
+  // check for unordered list and nested unordered list
+  if (/^(\*|-)\s/.test(line) || /^(\*|-)\s/.test(line.trimStart())) {
+    const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
+    const marginLeft = `${5 + precedingSpaces * 12}px`;
+
+    const text = line.startsWith(' ')
+      ? line.trimStart().replace(/^(\*|-)\s/, '')
+      : line.replace(/^(\*|-)\s/, '');
+
     return (
-      <div
-        style={{
-          marginLeft,
-          paddingLeft: '10px',
-          position: 'relative',
-        }}>
-        <span
-          style={{
-            content: "'\\2022'",
-            position: 'absolute',
-            left: '0',
-            top: '18px',
-            border: '2px solid black',
-            borderRadius: '50%',
-          }}
-        />{' '}
-        {parse(text, options, index + 1)}
-      </div>
-    );
-    // check for nested unordered list
-  } else if (/^(\*|-)\s/.test(line.trimStart())) {
-    const text = line.trimStart();
-    return (
-      <div
-        style={{
-          marginLeft,
-          position: 'relative',
-        }}>
-        <span
-          style={{
-            content: "'\\2022'",
-            position: 'absolute',
-            left: '0',
-            top: '13px',
-            border: '2px solid black',
-            borderRadius: '50%',
-          }}
-        />
-        {parse(text, options, index + 1)}
-      </div>
+      <li className="flex gap-2 items-start" style={{ marginLeft }}>
+        <span className="flex items-center">•</span>
+        <span>{parse(text, options, index + 1)}</span>
+      </li>
     );
   }
 
   // check for ordered list
-  if (/^\d+\.\s/.test(line)) {
-    const number = line.match(/^\d+/)?.[0];
-    const text = line.replace(/^\d+\.\s/, '');
+  if (/^\d+\.\s/.test(line) || /^\d+\.\s/.test(line.trimStart())) {
+    const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
+    const marginLeft = `${5 + precedingSpaces * 12}px`;
+
+    const number = line.startsWith(' ')
+      ? line.trimStart().match(/^\d+/)?.[0]
+      : line.match(/^\d+/)?.[0];
+    const text = line.startsWith(' ')
+      ? line.trimStart().replace(/^\d+\.\s/, '')
+      : line.replace(/^\d+\.\s/, '');
+
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginLeft,
-          paddingLeft: '10px',
-        }}>
-        {number ? (
-          <span
-            style={{
-              marginRight: '10px',
-              position: 'relative',
-              top: '2px',
-            }}>
-            {`${number}.`}
-          </span>
-        ) : (
-          <span
-            style={{
-              position: 'absolute',
-              left: '0',
-              top: '19px',
-              border: '2px solid black',
-              borderRadius: '50%',
-              padding: '0 5px',
-            }}
-          />
-        )}
-        {parse(text, options, index + 1)}
-      </div>
+      <li className="flex gap-2 items-start" style={{ marginLeft }}>
+        <span className="flex items-center">{`${number}.`}</span>
+        <span>{parse(text, options, index + 1)}</span>
+      </li>
     );
   }
 
@@ -192,7 +141,6 @@ export function parse(
     return (
       <blockquote
         style={{
-          marginLeft,
           paddingLeft: '10px',
           borderLeft: '2px solid #ddd',
           color: '#777',
