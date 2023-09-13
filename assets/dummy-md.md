@@ -1,4 +1,4 @@
-# Markdown Test Document
+# Markdown Test
 
 ## Text Formatting
 
@@ -91,10 +91,10 @@ def submit_feedback(self, feedback_text, thumbs_up_or_down):
 
 ## Tables
 
-| Header 1 | Header 2 |
-|----------|----------|
-| Cell 1   | Cell 2   |
-| Cell 3   | Cell 4   |
+                  | Header 1 | Header 2 |
+                  |----------|----------|
+                  | Cell 1   | Cell 2   |
+                  | Cell 3   | Cell 4   |
 
 
 
@@ -103,26 +103,13 @@ def submit_feedback(self, feedback_text, thumbs_up_or_down):
 | Cell 1   | Cell 2   |
 | Cell 3   | Cell 4   |
 
-
-## Task Lists
-
-- [x] Task 1
-- [ ] Task 2
-- [ ] Task 3
 
 ## Inline Code
 
 This is `inline code`.
 
-## Footnotes
-
-Here's a footnote[^1].
-
-[^1]: This is a footnote.
 
 ## Emojis
 
 - 🔒 It's just you and me here! No one else looks at your data, including the nice folks at Gather who made me.
 - 🆘 At any time that I'm not giving you what you need, just click "Get Help" in the top right menu
-
-:smile: :rocket: :tada:

@@ -1,6 +1,10 @@
-import { getDefaultNormalizer, render, screen } from '@testing-library/react';
+import { fireEvent, getDefaultNormalizer, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import handleMarkdown from './markdown-parser';
+
+// if table and code block have spaces before them, do we want to render as code block and table?
+// if there are inline styles in header, blockquote, table or other inline styles, do we want to do furthur parsing?
+// how to write tests for md content that's being streamed in?
 
 describe('unordered list parsing', () => {
   describe('unordered list with no nested list', () => {
@@ -274,6 +278,92 @@ describe('span-level parsing - inside-one-line: bold, italic, strike-through, in
           'boldness with *italic* and ~~strike-through~~ and [link](https://www.google.com)'
         )
       ).toBeInTheDocument();
+    });
+  });
+});
+
+describe('block-level parsing - multi-line block: codeBlock, table', () => {
+  describe('codeBlock', () => {
+    const md = `\`\`\`js
+const renderMessages = (): JSX.Element[] => {
+    const viewMsgs = messages
+      .filter((msgData: MsgType) => {
+        if (!verboseMode && (msgData.type === 'CHAT_RESPONSE')) {
+          return false;
+        }
+        return true;
+      })
+    return viewMsgs;
+  };
+\`\`\`
+`;
+    const code = md.split('\n').slice(1, -2);
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+    beforeEach(() => {
+      render(parsed);
+    });
+    test('language header should be rendered with proper language name and a copy button', () => {
+      expect(screen.getByText('js')).toBeInTheDocument();
+      expect(screen.getByText('copy')).toBeInTheDocument();
+    });
+
+    test('copy button on the header should be functional', async () => {
+      // Mock the navigator clipboard API
+      const clipboardWriteText = jest.fn();
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: clipboardWriteText,
+        },
+      });
+
+      const copyButton = screen.getByText('copy');
+      fireEvent.click(copyButton);
+      expect(clipboardWriteText).toHaveBeenCalledWith(code.join('\n'));
+    });
+  });
+
+  describe('table', () => {
+    const md = `| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |
+`;
+    const tableRows = md.split('\n');
+    const headerRow = tableRows[0];
+    const bodyRows = tableRows.slice(2);
+
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+    beforeEach(() => {
+      render(parsed);
+    });
+
+    test('table header row should be rendered with proper header names', () => {
+      const headerCells = screen.getAllByRole('columnheader');
+
+      const headerNames = headerRow
+        .split('|')
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+
+      headerCells.forEach((headerCell, index) => {
+        expect(headerCell).toBeInTheDocument();
+        expect(headerCell.textContent).toBe(headerNames[index]);
+      });
+    });
+
+    test('table body rows should be rendered with proper cell values', () => {
+      const bodyCells = screen.getAllByRole('cell');
+      const cellValues = bodyRows.map((row) =>
+        row
+          .split('|')
+          .slice(1, -1)
+          .map((cell) => cell.trim())
+      );
+
+      bodyCells.forEach((bodyCell, index) => {
+        expect(bodyCell).toBeInTheDocument();
+        expect(bodyCell.textContent).toBe(cellValues[Math.floor(index / 2)][index % 2]);
+      });
     });
   });
 });
