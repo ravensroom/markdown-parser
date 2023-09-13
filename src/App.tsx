@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import handleMarkdown from './markdown-parser';
+import { useEffect, useState } from 'react';
+import handleMarkdown from './markdown-parser/markdown-parser';
 
 function App() {
-
-  const [markdownContent, setMarkdownContent] = useState('')
-  const [contentToRender, setContentToRender] = useState('')
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [contentToRender, setContentToRender] = useState('');
 
   useEffect(() => {
     async function fetchMarkdownFile() {
@@ -12,7 +11,6 @@ function App() {
         const response = await fetch('../assets/dummy-md.md');
         const markdownText = await response.text();
         setMarkdownContent(markdownText);
-        console.log(markdownText)
       } catch (error) {
         console.error('Error loading Markdown file:', error);
       }
@@ -36,17 +34,19 @@ function App() {
       clearInterval(interval);
     };
   }, [markdownContent]);
-  
+
   return (
-    <div className='flex gap-[20px] my-2 mx-4'>
-      <div className='w-[700px]'>
-        {markdownContent.split('\n').map((p, idx) => p === '' ? <br key={idx} /> : <p key={idx}>{p}</p>)}
+    <div className="flex gap-[20px] my-2 mx-4">
+      <div className="w-[700px]">
+        {markdownContent
+          .split('\n')
+          .map((p, idx) => (p === '' ? <br key={idx} /> : <p key={idx}>{p}</p>))}
       </div>
-      <div className='w-[650px] text-lg text-[#3c4043] font-EBGaramond'>
+      <div className="w-[650px] text-lg text-[#3c4043] font-EBGaramond">
         {handleMarkdown(contentToRender)}
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

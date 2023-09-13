@@ -33,11 +33,10 @@ export interface ParseOptions {
 }
 
 export function parse(
-  lineInput: string,
+  line: string,
   options: ParseOptions,
   index = 0
 ): React.ReactNode | 'cb' | 'tb' | null {
-  const line: string = lineInput.trimEnd();
   const { cb, tb } = options;
   const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0; // Count preceding spaces
   const marginLeft = `${precedingSpaces * 10}px`;
@@ -161,28 +160,27 @@ export function parse(
           marginLeft,
           paddingLeft: '10px',
         }}>
-        {number
-        ? (
-          <span style={{
-            marginRight: '10px',
-            position: 'relative',
-            top: '2px',
-          }}>
+        {number ? (
+          <span
+            style={{
+              marginRight: '10px',
+              position: 'relative',
+              top: '2px',
+            }}>
             {`${number}.`}
           </span>
-        )
-        : (
-        <span
-          style={{
-            position: 'absolute',
-            left: '0',
-            top: '19px',
-            border: '2px solid black',
-            borderRadius: '50%',
-            padding: '0 5px',
-          }}
-        />)
-        }
+        ) : (
+          <span
+            style={{
+              position: 'absolute',
+              left: '0',
+              top: '19px',
+              border: '2px solid black',
+              borderRadius: '50%',
+              padding: '0 5px',
+            }}
+          />
+        )}
         {parse(text, options, index + 1)}
       </div>
     );
@@ -224,17 +222,11 @@ export function parse(
     const { pre, target, post } = seperator(/`([^`]+)`/g, line, 'code');
     return (
       <span key={`inlcd-${index}`}>
-        <span>
-          {parse(pre, options, index + 1)}
-          {` `}
-        </span>
+        <span>{parse(pre, options, index + 1)}</span>
         <span className="bg-gray-200 font-bold text-sm rounded-[4px] px-1">
           {parse(target, options, index + 1)}
         </span>
-        <span>
-          {` `}
-          {parse(post, options, index + 1)}
-        </span>
+        <span>{parse(post, options, index + 1)}</span>
       </span>
     );
   }
@@ -244,17 +236,11 @@ export function parse(
     const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, line, 'n');
     return (
       <span>
-        <span>
-          {parse(pre, options, index + 1)}
-          {` `}
-        </span>
+        <span>{parse(pre, options, index + 1)}</span>
         <span key={`bold-${target.slice(0, 5)}`} style={{ fontWeight: '500' }}>
           {target}
         </span>
-        <span>
-          {` `}
-          {parse(post, options, index + 1)}
-        </span>
+        <span>{parse(post, options, index + 1)}</span>
       </span>
     );
   }
@@ -264,15 +250,9 @@ export function parse(
     const { pre, target, post } = seperator(/\*(.*?)\*/g, line, 'n');
     return (
       <span key={`italic-${index}`}>
-        <span>
-          {parse(pre, options, index + 1)}
-          {` `}
-        </span>
+        <span>{parse(pre, options, index + 1)}</span>
         <em>{target}</em>
-        <span>
-          {` `}
-          {parse(post, options, index + 1)}
-        </span>
+        <span>{parse(post, options, index + 1)}</span>
       </span>
     );
   }
@@ -282,15 +262,9 @@ export function parse(
     const { pre, target, post } = seperator(/~~(.*?)~~/g, line, 'n');
     return (
       <span key={`strikethrough-${index}`}>
-        <span>
-          {parse(pre, options, index + 1)}
-          {` `}
-        </span>
+        <span>{parse(pre, options, index + 1)}</span>
         <del>{target}</del>
-        <span>
-          {` `}
-          {parse(post, options, index + 1)}
-        </span>
+        <span>{parse(post, options, index + 1)}</span>
       </span>
     );
   }
@@ -299,18 +273,12 @@ export function parse(
   /* eslint-disable */
   if (/\[([^\]]+)\]\(([^\)]+)\)/.test(line)) {
     const { pre, target, post } = seperator(/\[([^\]]+)\]\(([^\)]+)\)/g, line, 'a');
-  /* eslint-enable */
+    /* eslint-enable */
     return (
       <span key={`link-${index}`}>
-        <span>
-          {parse(pre, options, index + 1)}
-          {` `}
-        </span>
+        <span>{parse(pre, options, index + 1)}</span>
         <span>{parse(target, options, index + 1)}</span>
-        <span>
-          {` `}
-          {parse(post, options, index + 1)}
-        </span>
+        <span>{parse(post, options, index + 1)}</span>
       </span>
     );
   }
@@ -439,7 +407,7 @@ function Table({ tableRows }: { tableRows: string[] }) {
               <td
                 key={`${row}-${cellIndex}`}
                 className="px-2 py-1 border-l-2 border-b-2 border-zinc-200">
-                  {cell.trim()}
+                {cell.trim()}
               </td>
             ))}
         </tr>

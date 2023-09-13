@@ -2,13 +2,16 @@
 
 ## Text Formatting
 
-**Bold** text, *italic* text, ~~strikethrough~~ text, and [link](www.google.com) in one line
+This is **bold** and *italic* and ~~strike-through~~ and `inline-code` and [link](https://www.google.com).
+
+This is `inline code block with **bold** and *italic* and ~~strike-through~~ and [link](https://www.google.com)` inside.
 
 ## Lists
 
 Unordered List:
 - Item 1
   - nested item **bolded** and *italic* and `inline` and [link](www.google.com) in one line
+    - nested inside nesting
 - Item 2
 - Item 3
 
