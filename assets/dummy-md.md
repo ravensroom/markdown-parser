@@ -109,4 +109,7 @@ Here's a footnote[^1].
 
 ## Emojis
 
+- 🔒 It's just you and me here! No one else looks at your data, including the nice folks at Gather who made me.
+- 🆘 At any time that I'm not giving you what you need, just click "Get Help" in the top right menu
+
 :smile: :rocket: :tada:
