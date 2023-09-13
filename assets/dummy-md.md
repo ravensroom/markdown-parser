@@ -10,6 +10,13 @@ This is `inline code block with **bold** and *italic* and ~~strike-through~~ and
 
 Unordered List:
 - Item 1
+  1. hello
+  2. world
+content of item 1
+- Item 2
+- Item 3
+
+- Item 1
   - nested item **bolded** and *italic* and `inline` and [link](www.google.com) in one line
     - nested inside nesting
 - Item 2
@@ -17,12 +24,15 @@ Unordered List:
 
 Ordered List:
 1. First item
+  - unordered inside ordered list
+  1. ordered inside ordered list
+  2. second
 2. Second item
 3. Third item
 
 ## Links
 
-- [Google](https://www.google.com)
+- this is a link [Google](https://www.google.com)
 - [OpenAI](https://www.openai.com)
 
 ## Images

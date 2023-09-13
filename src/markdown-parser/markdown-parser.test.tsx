@@ -2,6 +2,147 @@ import { getDefaultNormalizer, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import handleMarkdown from './markdown-parser';
 
+describe('unordered list parsing', () => {
+  describe('unordered list with no nested list', () => {
+    const md = `
+- Item 1
+Content of item 1
+- Item 2
+- Item 3
+`;
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+
+    beforeEach(() => {
+      render(parsed);
+    });
+
+    test('list items should be rendered and as unordered', () => {
+      const listElements = screen.getAllByRole('listitem');
+      expect(listElements.length).toBe(3);
+      listElements.forEach((listItem) => {
+        const firstChild = listItem.firstChild;
+        expect(firstChild).toBeInTheDocument();
+        expect(firstChild).toHaveTextContent('•');
+      });
+    });
+
+    test('non-list items should be rendered without bullets', () => {
+      const nonListItems = screen.getAllByText('Content of item 1');
+      expect(nonListItems.length).toBe(1);
+      nonListItems.forEach((nonListItem) => {
+        const firstChild = nonListItem.firstChild;
+        expect(firstChild).not.toHaveTextContent('•');
+        expect(firstChild).toHaveTextContent('Content of item 1');
+      });
+    });
+  });
+  describe('unordered list with nested lists', () => {
+    const md = `
+- Item 1
+    - Item 1.1
+    - Item 1.2
+- Item 2
+- Item 3
+`;
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+
+    beforeEach(() => {
+      render(parsed);
+    });
+
+    test('nested list items should have proper indentation', () => {
+      const listElements = screen.getAllByRole('listitem');
+      expect(listElements.length).toBe(5);
+      listElements.forEach((listItem, index) => {
+        const firstChild = listItem.firstChild;
+        expect(firstChild).toBeInTheDocument();
+        expect(firstChild).toHaveTextContent('•');
+
+        if (index === 1 || index === 2) {
+          const precedingSpaces = 4;
+          const marginLeft = `${5 + precedingSpaces * 12}px`;
+          expect(listItem).toHaveStyle(`margin-left: ${marginLeft}`);
+        }
+      });
+    });
+  });
+});
+
+describe('ordered list parsing', () => {
+  describe('ordered list with no nested list', () => {
+    const md = `
+1. Item 1
+Content of item 1
+2. Item 2
+3. Item 3
+`;
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+
+    beforeEach(() => {
+      render(parsed);
+    });
+
+    test('list items should be rendered and as ordered', () => {
+      const listElements = screen.getAllByRole('listitem');
+      expect(listElements.length).toBe(3);
+      listElements.forEach((listItem, index) => {
+        const firstChild = listItem.firstChild;
+        expect(firstChild).toBeInTheDocument();
+        expect(firstChild).toHaveTextContent(`${index + 1}.`);
+      });
+    });
+
+    test('non-list items should be rendered without numbers', () => {
+      const nonListItems = screen.getAllByText('Content of item 1');
+      expect(nonListItems.length).toBe(1);
+      nonListItems.forEach((nonListItem) => {
+        const firstChild = nonListItem.firstChild;
+        expect(firstChild).toHaveTextContent('Content of item 1');
+      });
+    });
+  });
+  describe('ordered list with nested lists', () => {
+    const md = `
+1. Item 1
+    - Item 1.1
+    - Item 1.2
+2. Item 2
+    1. Item 2.1
+    2. Item 2.2
+3. Item 3
+`;
+    const parsed = <div data-testid="container">{handleMarkdown(md)}</div>;
+
+    beforeEach(() => {
+      render(parsed);
+    });
+
+    test('nested list items should have proper indentation', () => {
+      const listElements = screen.getAllByRole('listitem');
+      expect(listElements.length).toBe(7);
+      listElements.forEach((listItem, index) => {
+        const firstChild = listItem.firstChild;
+        expect(firstChild).toBeInTheDocument();
+
+        if ([0, 3, 6].includes(index)) {
+          expect(firstChild).toHaveTextContent(`${Math.floor(index / 3) + 1}.`);
+        }
+        if ([1, 2, 4, 5].includes(index)) {
+          const precedingSpaces = 4;
+          const marginLeft = `${5 + precedingSpaces * 12}px`;
+          expect(listItem).toHaveStyle(`margin-left: ${marginLeft}`);
+          if ([1, 2].includes(index)) {
+            expect(firstChild).toHaveTextContent('•');
+          }
+          if ([4, 5].includes(index)) {
+            expect(firstChild).toHaveTextContent(`${index - 3}.`);
+          }
+        }
+      });
+    });
+  });
+});
+
 describe('span-level parsing - inside-one-line: bold, italic, strike-through, inline-code, link', () => {
   describe("for markdown content that's not part of a list", () => {
     const md =
