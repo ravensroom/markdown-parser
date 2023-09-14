@@ -7,7 +7,7 @@ import handleMarkdown from './markdown-parser';
 // how to write tests for md content that's being streamed in?
 
 describe('unordered list parsing', () => {
-  describe('unordered list with no nested list', () => {
+  describe('should render single level lists', () => {
     const md = `
 - Item 1
 Content of item 1
@@ -20,17 +20,18 @@ Content of item 1
       render(parsed);
     });
 
-    test('list items should be rendered and as unordered', () => {
+    test('should render list items', () => {
       const listElements = screen.getAllByRole('listitem');
       expect(listElements.length).toBe(3);
-      listElements.forEach((listItem) => {
-        const firstChild = listItem.firstChild;
-        expect(firstChild).toBeInTheDocument();
-        expect(firstChild).toHaveTextContent('•');
+      test('should verify that list items are rendered with bullets', () => {
+        listElements.forEach((listItem) => {
+          const firstChild = listItem.firstChild;
+          expect(firstChild).toHaveTextContent('•');
+        });
       });
     });
-
-    test('non-list items should be rendered without bullets', () => {
+    test('should render un-bullited lines as is', () => {
+      // test('non-list items should be rendered without bullets', () => {
       const nonListItems = screen.getAllByText('Content of item 1');
       expect(nonListItems.length).toBe(1);
       nonListItems.forEach((nonListItem) => {
@@ -40,7 +41,7 @@ Content of item 1
       });
     });
   });
-  describe('unordered list with nested lists', () => {
+  describe('should render nested lists', () => {
     const md = `
 - Item 1
     - Item 1.1
@@ -54,7 +55,7 @@ Content of item 1
       render(parsed);
     });
 
-    test('nested list items should have proper indentation', () => {
+    test('should render proper indentation for nested list', () => {
       const listElements = screen.getAllByRole('listitem');
       expect(listElements.length).toBe(5);
       listElements.forEach((listItem, index) => {
@@ -73,7 +74,7 @@ Content of item 1
 });
 
 describe('ordered list parsing', () => {
-  describe('ordered list with no nested list', () => {
+  describe('should ordered list with no nested list', () => {
     const md = `
 1. Item 1
 Content of item 1
@@ -366,4 +367,14 @@ const renderMessages = (): JSX.Element[] => {
       });
     });
   });
+});
+
+describe('verify single line block parsing', () => {
+  /*
+    import handleMarkdown,
+    define multi line input.
+    spy on parse
+    call handleMarkdown with input.
+    verify that parse is called with input with no newline.
+  */
 });

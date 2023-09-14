@@ -1,26 +1,32 @@
 # Markdown Test
 
-## Text Formatting
+    ## indented header with `inline code`
+    > indented code block
 
 This is **bold** and *italic* and ~~strike-through~~ and `inline-code` and [link](https://www.google.com).
+  This is **bold** and *italic* and ~~strike-through~~ and `inline-code` and [link](https://www.google.com).
+    but **bold** text start *italic*
+      **bold content with *italic* flavor**
+      *italic content with **bold** flavor*
 
 This is `inline code block with **bold** and *italic* and ~~strike-through~~ and [link](https://www.google.com)` inside.
 
 ## Lists
 
+* start **bold**
 Unordered List:
 - Item 1
   1. hello
   2. world
-content of item 1
+    indented content of item 1
 - Item 2
 - Item 3
 
 - Item 1
   - nested item **bolded** and *italic* and `inline` and [link](www.google.com) in one line
-    - nested inside nesting
-- Item 2
-- Item 3
+    - nested inside nesting nested inside nestingnested inside nestingnested inside nestingnested inside nestingnested inside nestingnested inside nestingnested inside nestingnested inside nesting
+  - Item 2
+  - Item 3
 
 Ordered List:
 1. First item
@@ -32,12 +38,16 @@ Ordered List:
 
 ## Links
 
-- this is a link [Google](https://www.google.com)
-- [OpenAI](https://www.openai.com)
+- this is a link [Google](https://www.google.com) in a list
+    [an indented link](https://www.openai.com)
+    **bold** content
+
 
 ## Images
 
 ![Markdown Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Markdown-mark.svg/208px-Markdown-mark.svg.png)
+    ![Indented Markdown Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Markdown-mark.svg/208px-Markdown-mark.svg.png)
+
 
 ## Headers
 
@@ -50,20 +60,24 @@ Ordered List:
 > This is a blockquote.
 > It can span multiple lines.
 
+  > this is indented blockquote
+  > and it can span multiple lines
+
 ## Code Blocks
 
-```js
-const renderMessages = (): JSX.Element[] => {
-    const viewMsgs = messages
-      .filter((msgData: MsgType) => {
-        if (!verboseMode && (msgData.type === 'CHAT_RESPONSE')) {
-          return false;
-        }
-        return true;
-      })
-    return viewMsgs;
-  };
-```
+    ```js
+    // indented code
+    const renderMessages = (): JSX.Element[] => {
+        const viewMsgs = messages
+          .filter((msgData: MsgType) => {
+            if (!verboseMode && (msgData.type === 'CHAT_RESPONSE')) {
+              return false;
+            }
+            return true;
+          })
+        return viewMsgs;
+      };
+    ```
 
 ```py
 def submit_feedback(self, feedback_text, thumbs_up_or_down):

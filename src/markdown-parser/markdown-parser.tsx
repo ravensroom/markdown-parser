@@ -35,19 +35,23 @@ export interface ParseOptions {
 export function parse(
   line: string,
   options: ParseOptions,
-  index = 0
-): React.ReactNode | 'cb' | 'tb' | null {
+  index = 0,
+  inRecursion = false
+): React.ReactNode | string | null {
   const { cb, tb } = options;
+  const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
+  const trimmedLine = line.trimStart();
+  const marginLeft = `${precedingSpaces * 6}px`;
 
   // block-level parsing - multi-line block: codeBlock, table
 
   // check for code block
-  if (/^```(\S+)?/.test(line)) {
+  if (/^```(\S+)?/.test(trimmedLine)) {
     cb.inCodeBlock = !cb.inCodeBlock;
     // code block starts, send render signal
     if (cb.inCodeBlock) {
-      cb.codeBlockLang = line.match(/^```(\S+)?/)?.[1] || '';
-      return 'cb';
+      cb.codeBlockLang = trimmedLine.match(/^```(\S+)?/)?.[1] || '';
+      return 'cb' + ',' + marginLeft;
     }
 
     // code block ends, clear up the code block state
@@ -62,14 +66,14 @@ export function parse(
   }
 
   // check for table
-  if (/^\|(.+\|)+/.test(line)) {
+  if (/^\|(.+\|)+/.test(trimmedLine)) {
     if (!tb.inTable) {
       // table starts, send render signal
       tb.inTable = true;
-      tb.tableRows.push(line);
-      return 'tb';
+      tb.tableRows.push(trimmedLine);
+      return 'tb' + ',' + marginLeft;
     }
-    tb.tableRows.push(line);
+    tb.tableRows.push(trimmedLine);
     return null;
   }
 
@@ -83,12 +87,13 @@ export function parse(
   // block-level parsing - one-line block: h, li, blockquote, hr, img
 
   // check for header
-  if (/^#{1,6}\s/.test(line)) {
-    const level = line.match(/^#{1,6}/)?.[0].length || 0;
-    const text = line.replace(/^#{1,6}\s/, '');
+  if (/^#{1,6}\s/.test(trimmedLine)) {
+    const level = trimmedLine.match(/^#{1,6}/)?.[0].length || 0;
+    const text = trimmedLine.replace(/^#{1,6}\s/, '');
     return (
       <div
         style={{
+          marginLeft,
           fontSize: `${1.5 - level * 0.2}em`,
           fontWeight: 'bold',
           padding: '5px 0',
@@ -99,13 +104,8 @@ export function parse(
   }
 
   // check for unordered list and nested unordered list
-  if (/^(\*|-)\s/.test(line) || /^(\*|-)\s/.test(line.trimStart())) {
-    const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
-    const marginLeft = `${5 + precedingSpaces * 12}px`;
-
-    const text = line.startsWith(' ')
-      ? line.trimStart().replace(/^(\*|-)\s/, '')
-      : line.replace(/^(\*|-)\s/, '');
+  if (/^(\*|-)\s/.test(trimmedLine)) {
+    const text = trimmedLine.replace(/^(\*|-)\s/, '');
 
     return (
       <li className="flex gap-2 items-start" style={{ marginLeft }}>
@@ -116,16 +116,9 @@ export function parse(
   }
 
   // check for ordered list
-  if (/^\d+\.\s/.test(line) || /^\d+\.\s/.test(line.trimStart())) {
-    const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
-    const marginLeft = `${5 + precedingSpaces * 12}px`;
-
-    const number = line.startsWith(' ')
-      ? line.trimStart().match(/^\d+/)?.[0]
-      : line.match(/^\d+/)?.[0];
-    const text = line.startsWith(' ')
-      ? line.trimStart().replace(/^\d+\.\s/, '')
-      : line.replace(/^\d+\.\s/, '');
+  if (/^\d+\.\s/.test(trimmedLine)) {
+    const number = trimmedLine.match(/^\d+/)?.[0];
+    const text = trimmedLine.replace(/^\d+\.\s/, '');
 
     return (
       <li className="flex gap-2 items-start" style={{ marginLeft }}>
@@ -136,11 +129,12 @@ export function parse(
   }
 
   // check for blockquote
-  if (/^>\s/.test(line)) {
-    const text = line.replace(/^>\s?/, '');
+  if (/^>\s/.test(trimmedLine)) {
+    const text = trimmedLine.replace(/^>\s?/, '');
     return (
       <blockquote
         style={{
+          marginLeft,
           paddingLeft: '10px',
           borderLeft: '2px solid #ddd',
           color: '#777',
@@ -156,74 +150,116 @@ export function parse(
   }
 
   // check for images(put this condition before links)
-  if (/!\[([^\]]+)\]\(([^\)]+)\)/.test(line)) {
-    const match = line.match(/!\[([^\]]+)\]\(([^\)]+)\)/);
+  if (/!\[([^\]]+)\]\(([^\)]+)\)/.test(trimmedLine)) {
+    const match = trimmedLine.match(/!\[([^\]]+)\]\(([^\)]+)\)/);
     const alt = match?.[1];
     const src = match?.[2];
-    return <img src={src} alt={alt} />;
+    return <img src={src} alt={alt} style={{ marginLeft }} />;
   }
 
   // span-level parsing - inside-one-line: bold, italic, strike-through, inline-code, link
 
   // check for inline code
-  if (/`([^`]+)`/.test(line)) {
-    const { pre, target, post } = seperator(/`([^`]+)`/g, line);
-    return (
-      <span key={`inlcd-${index}`}>
-        <span>{parse(pre, options, index + 1)}</span>
+  if (/`([^`]+)`/.test(trimmedLine)) {
+    const { pre, target, post } = seperator(/`([^`]+)`/g, trimmedLine);
+
+    const children = (
+      <>
+        <span>{parse(pre, options, index + 1, true)}</span>
         <span className="bg-gray-200 text-gray-600 text-xs rounded-[4px] px-1">
+          {/* no futhur parsing for inline code */}
           <code>{target}</code>
         </span>
-        <span>{parse(post, options, index + 1)}</span>
+        <span>{parse(post, options, index + 1, true)}</span>
+      </>
+    );
+
+    return inRecursion ? (
+      <span key={`inlcd-${index}`} style={{ marginLeft }}>
+        {children}
       </span>
+    ) : (
+      <div key={`inlcd-${index}`} style={{ marginLeft }}>
+        {children}
+      </div>
     );
   }
 
   // check for bold
-  if (/\*\*(.*?)\*\*/.test(line)) {
-    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, line);
-    return (
-      <span>
-        <span>{parse(pre, options, index + 1)}</span>
-        <span key={`bold-${target.slice(0, 5)}`} style={{ fontWeight: '500' }}>
+  if (/\*\*(.*?)\*\*/.test(trimmedLine)) {
+    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, trimmedLine);
+    const children = (
+      <>
+        <span>{parse(pre, options, index + 1, true)}</span>
+        <span key={`bold-${target.slice(0, 5)}`} style={{ fontWeight: '600' }}>
+          {/* keep parsing for bold content */}
+          {/* to be implemented */}
           {target}
         </span>
-        <span>{parse(post, options, index + 1)}</span>
-      </span>
+        <span>{parse(post, options, index + 1, true)}</span>
+      </>
+    );
+    return inRecursion ? (
+      <span style={{ marginLeft }}>{children}</span>
+    ) : (
+      <div style={{ marginLeft }}>{children}</div>
     );
   }
 
   // check for italic
-  if (/\*(.*?)\*/.test(line)) {
-    const { pre, target, post } = seperator(/\*(.*?)\*/g, line);
-    return (
-      <span key={`italic-${index}`}>
-        <span>{parse(pre, options, index + 1)}</span>
-        <em>{target}</em>
-        <span>{parse(post, options, index + 1)}</span>
+  if (/\*(.*?)\*/.test(trimmedLine)) {
+    const { pre, target, post } = seperator(/\*(.*?)\*/g, trimmedLine);
+    const children = (
+      <>
+        <span>{parse(pre, options, index + 1, true)}</span>
+        <em>
+          {' '}
+          {/* keep parsing for italic content */}
+          {/* to be implemented */}
+          {target}
+        </em>
+        <span>{parse(post, options, index + 1, true)}</span>
+      </>
+    );
+    return inRecursion ? (
+      <span key={`italic-${index}`} style={{ marginLeft }}>
+        {children}
       </span>
+    ) : (
+      <div key={`italic-${index}`} style={{ marginLeft }}>
+        {children}
+      </div>
     );
   }
 
   // check for strike through
-  if (/~~(.*?)~~/.test(line)) {
-    const { pre, target, post } = seperator(/~~(.*?)~~/g, line);
-    return (
-      <span key={`strikethrough-${index}`}>
-        <span>{parse(pre, options, index + 1)}</span>
+  if (/~~(.*?)~~/.test(trimmedLine)) {
+    const { pre, target, post } = seperator(/~~(.*?)~~/g, trimmedLine);
+    const children = (
+      <>
+        <span>{parse(pre, options, index + 1, true)}</span>
         <del>{target}</del>
-        <span>{parse(post, options, index + 1)}</span>
+        <span>{parse(post, options, index + 1, true)}</span>
+      </>
+    );
+    return inRecursion ? (
+      <span key={`strikethrough-${index}`} style={{ marginLeft }}>
+        {children}
       </span>
+    ) : (
+      <div key={`strikethrough-${index}`} style={{ marginLeft }}>
+        {children}
+      </div>
     );
   }
 
   // check for links
-  if (/\[([^\]]+)\]\(([^\)]+)\)/.test(line)) {
-    const { pre, target, post } = seperator(/\[([^\]]+)\]\(([^\)]+)\)/g, line, 'a');
+  if (/\[([^\]]+)\]\(([^\)]+)\)/.test(trimmedLine)) {
+    const { pre, target, post } = seperator(/\[([^\]]+)\]\(([^\)]+)\)/g, trimmedLine, 'a');
     const [linkName, href] = target.split(', ');
-    return (
-      <span key={`link-${index}`}>
-        <span>{parse(pre, options, index + 1)}</span>
+    const children = (
+      <>
+        <span>{parse(pre, options, index + 1, true)}</span>
         <span>
           <a
             href={href}
@@ -234,16 +270,29 @@ export function parse(
             {linkName}
           </a>
         </span>
-        <span>{parse(post, options, index + 1)}</span>
+        <span>{parse(post, options, index + 1, true)}</span>
+      </>
+    );
+    return inRecursion ? (
+      <span key={`link-${index}`} style={{ marginLeft }}>
+        {children}
       </span>
+    ) : (
+      <div key={`link-${index}`} style={{ marginLeft }}>
+        {children}
+      </div>
     );
   }
 
   // check for line break
-  if (line === '') return <div className="h-[6px]"></div>;
+  if (!inRecursion && line === '') return <div className="h-[20px]"></div>;
 
   // finally, regular text
-  return <span>{line}</span>;
+  return inRecursion ? (
+    <span style={{ marginLeft }}>{trimmedLine}</span>
+  ) : (
+    <div style={{ marginLeft }}>{trimmedLine}</div>
+  );
 }
 
 function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' = 'n') {
@@ -360,12 +409,22 @@ export default function handleMarkdown(value: string) {
       tb,
     });
 
-    if (res === 'cb') {
-      return <CodeBlock lang={cb.codeBlockLang!} code={cb.code} />;
+    if (typeof res === 'string' && res.startsWith('cb')) {
+      const marginLeft = res.split(',')[1];
+      return (
+        <div style={{ marginLeft }}>
+          <CodeBlock lang={cb.codeBlockLang!} code={cb.code} />
+        </div>
+      );
     }
 
-    if (res === 'tb') {
-      return <Table tableRows={tb.tableRows} />;
+    if (typeof res === 'string' && res.startsWith('tb')) {
+      const marginLeft = res.split(',')[1];
+      return (
+        <div style={{ marginLeft }}>
+          <Table tableRows={tb.tableRows} />
+        </div>
+      );
     }
 
     return res;

@@ -42,7 +42,7 @@ function App() {
           .split('\n')
           .map((p, idx) => (p === '' ? <br key={idx} /> : <p key={idx}>{p}</p>))}
       </div>
-      <div className="w-[650px] text-lg text-[#3c4043] font-EBGaramond">
+      <div className="w-[650px] text-xl text-[#3c4043] font-EBGaramond">
         {handleMarkdown(markdownContent)}
       </div>
     </div>
