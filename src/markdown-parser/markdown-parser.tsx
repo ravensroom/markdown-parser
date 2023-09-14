@@ -1,15 +1,13 @@
-/* eslint-disable no-useless-escape */
+// list of languages we want to support code highlighting
+// checkout languaes supported by Prism: https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_LANGUAGES_PRISM.MD
 import bash from 'react-syntax-highlighter/dist/cjs/languages/prism/bash';
 import json from 'react-syntax-highlighter/dist/cjs/languages/prism/json';
 import markdown from 'react-syntax-highlighter/dist/cjs/languages/prism/markdown';
 import scss from 'react-syntax-highlighter/dist/cjs/languages/prism/scss';
-// list of languages we want to support code highlighting
-// checkout languaes supported by Prism: https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_LANGUAGES_PRISM.MD
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/cjs/languages/prism/typescript';
 // checkout highlight themes by Prism: https://github.com/PrismJS/prism-themes
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import React from 'react';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 SyntaxHighlighter.registerLanguage('tsx', tsx);
@@ -35,7 +33,6 @@ export interface ParseOptions {
 export function parse(
   line: string,
   options: ParseOptions,
-  index = 0,
   inRecursion = false
 ): React.ReactNode | string | null {
   const { cb, tb } = options;
@@ -98,7 +95,7 @@ export function parse(
           fontWeight: 'bold',
           padding: '5px 0',
         }}>
-        {parse(text, options, index + 1)}
+        {parse(text, options)}
       </div>
     );
   }
@@ -110,7 +107,7 @@ export function parse(
     return (
       <li className="flex gap-2 items-start" style={{ marginLeft }}>
         <span className="flex items-center">•</span>
-        <span>{parse(text, options, index + 1)}</span>
+        <span>{parse(text, options)}</span>
       </li>
     );
   }
@@ -123,7 +120,7 @@ export function parse(
     return (
       <li className="flex gap-2 items-start" style={{ marginLeft }}>
         <span className="flex items-center">{`${number}.`}</span>
-        <span>{parse(text, options, index + 1)}</span>
+        <span>{parse(text, options)}</span>
       </li>
     );
   }
@@ -139,7 +136,7 @@ export function parse(
           borderLeft: '2px solid #ddd',
           color: '#777',
         }}>
-        {parse(text, options, index + 1)}
+        {parse(text, options)}
       </blockquote>
     );
   }
@@ -165,23 +162,19 @@ export function parse(
 
     const children = (
       <>
-        <span>{parse(pre, options, index + 1, true)}</span>
+        <span>{parse(pre, options, true)}</span>
         <span className="bg-gray-200 text-gray-600 text-xs rounded-[4px] px-1">
           {/* no futhur parsing for inline code */}
           <code>{target}</code>
         </span>
-        <span>{parse(post, options, index + 1, true)}</span>
+        <span>{parse(post, options, true)}</span>
       </>
     );
 
     return inRecursion ? (
-      <span key={`inlcd-${index}`} style={{ marginLeft }}>
-        {children}
-      </span>
+      <span style={{ marginLeft }}>{children}</span>
     ) : (
-      <div key={`inlcd-${index}`} style={{ marginLeft }}>
-        {children}
-      </div>
+      <div style={{ marginLeft }}>{children}</div>
     );
   }
 
@@ -190,13 +183,13 @@ export function parse(
     const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, trimmedLine);
     const children = (
       <>
-        <span>{parse(pre, options, index + 1, true)}</span>
-        <span key={`bold-${target.slice(0, 5)}`} style={{ fontWeight: '600' }}>
+        <span>{parse(pre, options, true)}</span>
+        <span style={{ fontWeight: '600' }}>
           {/* keep parsing for bold content */}
           {/* to be implemented */}
           {target}
         </span>
-        <span>{parse(post, options, index + 1, true)}</span>
+        <span>{parse(post, options, true)}</span>
       </>
     );
     return inRecursion ? (
@@ -211,24 +204,20 @@ export function parse(
     const { pre, target, post } = seperator(/\*(.*?)\*/g, trimmedLine);
     const children = (
       <>
-        <span>{parse(pre, options, index + 1, true)}</span>
+        <span>{parse(pre, options, true)}</span>
         <em>
           {' '}
           {/* keep parsing for italic content */}
           {/* to be implemented */}
           {target}
         </em>
-        <span>{parse(post, options, index + 1, true)}</span>
+        <span>{parse(post, options, true)}</span>
       </>
     );
     return inRecursion ? (
-      <span key={`italic-${index}`} style={{ marginLeft }}>
-        {children}
-      </span>
+      <span style={{ marginLeft }}>{children}</span>
     ) : (
-      <div key={`italic-${index}`} style={{ marginLeft }}>
-        {children}
-      </div>
+      <div style={{ marginLeft }}>{children}</div>
     );
   }
 
@@ -237,19 +226,15 @@ export function parse(
     const { pre, target, post } = seperator(/~~(.*?)~~/g, trimmedLine);
     const children = (
       <>
-        <span>{parse(pre, options, index + 1, true)}</span>
+        <span>{parse(pre, options, true)}</span>
         <del>{target}</del>
-        <span>{parse(post, options, index + 1, true)}</span>
+        <span>{parse(post, options, true)}</span>
       </>
     );
     return inRecursion ? (
-      <span key={`strikethrough-${index}`} style={{ marginLeft }}>
-        {children}
-      </span>
+      <span style={{ marginLeft }}>{children}</span>
     ) : (
-      <div key={`strikethrough-${index}`} style={{ marginLeft }}>
-        {children}
-      </div>
+      <div style={{ marginLeft }}>{children}</div>
     );
   }
 
@@ -259,28 +244,23 @@ export function parse(
     const [linkName, href] = target.split(', ');
     const children = (
       <>
-        <span>{parse(pre, options, index + 1, true)}</span>
+        <span>{parse(pre, options, true)}</span>
         <span>
           <a
             href={href}
-            key={`link-${index}`}
             target="_blank"
             rel="noreferrer"
             style={{ color: 'cadetblue', textDecoration: 'underline' }}>
             {linkName}
           </a>
         </span>
-        <span>{parse(post, options, index + 1, true)}</span>
+        <span>{parse(post, options, true)}</span>
       </>
     );
     return inRecursion ? (
-      <span key={`link-${index}`} style={{ marginLeft }}>
-        {children}
-      </span>
+      <span style={{ marginLeft }}>{children}</span>
     ) : (
-      <div key={`link-${index}`} style={{ marginLeft }}>
-        {children}
-      </div>
+      <div style={{ marginLeft }}>{children}</div>
     );
   }
 
@@ -352,8 +332,10 @@ function Table({ tableRows }: { tableRows: string[] }) {
   const tableHead = (
     <thead>
       <tr>
-        {headerColumns.map((column) => (
-          <th className="px-2 py-1 border-l-2 border-b-2 border-zinc-200">{column}</th>
+        {headerColumns.map((column, index) => (
+          <th key={index} className="px-2 py-1 border-l-2 border-b-2 border-zinc-200">
+            {column}
+          </th>
         ))}
       </tr>
     </thead>
@@ -368,15 +350,13 @@ function Table({ tableRows }: { tableRows: string[] }) {
   const bodyRows = tableRows.slice(2)!;
   const tableBody = (
     <tbody>
-      {bodyRows.map((row) => (
-        <tr key={row}>
+      {bodyRows.map((row, index) => (
+        <tr key={index}>
           {row
             .substring(1, row.length - 1)
             .split('|')
             .map((cell, cellIndex) => (
-              <td
-                key={`${row}-${cellIndex}`}
-                className="px-2 py-1 border-l-2 border-b-2 border-zinc-200">
+              <td key={cellIndex} className="px-2 py-1 border-l-2 border-b-2 border-zinc-200">
                 {cell.trim()}
               </td>
             ))}
@@ -403,8 +383,8 @@ export default function handleMarkdown(value: string) {
     inTable: false,
     tableRows: [],
   };
-  return value.split('\n').map((chunk) => {
-    const res = parse(chunk, {
+  return value.split('\n').map((line, index) => {
+    const res = parse(line, {
       cb,
       tb,
     });
@@ -412,7 +392,7 @@ export default function handleMarkdown(value: string) {
     if (typeof res === 'string' && res.startsWith('cb')) {
       const marginLeft = res.split(',')[1];
       return (
-        <div style={{ marginLeft }}>
+        <div style={{ marginLeft }} key={index}>
           <CodeBlock lang={cb.codeBlockLang!} code={cb.code} />
         </div>
       );
@@ -421,12 +401,12 @@ export default function handleMarkdown(value: string) {
     if (typeof res === 'string' && res.startsWith('tb')) {
       const marginLeft = res.split(',')[1];
       return (
-        <div style={{ marginLeft }}>
+        <div style={{ marginLeft }} key={index}>
           <Table tableRows={tb.tableRows} />
         </div>
       );
     }
 
-    return res;
+    return <div key={index}>{res}</div>;
   });
 }
