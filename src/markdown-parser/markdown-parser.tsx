@@ -38,7 +38,7 @@ export function parse(
   const { cb, tb } = options;
   const precedingSpaces = line.match(/^(\s+)/)?.[1].length || 0;
   const trimmedLine = line.trimStart();
-  const marginLeft = `${precedingSpaces * 6}px`;
+  const marginLeft = `${precedingSpaces * 12}px`;
 
   // block-level parsing - multi-line block: codeBlock, table
 
@@ -158,7 +158,7 @@ export function parse(
 
   // check for inline code
   if (/`([^`]+)`/.test(trimmedLine)) {
-    const { pre, target, post } = seperator(/`([^`]+)`/g, trimmedLine);
+    const { pre, target, post } = seperator(/`([^`]+)`/g, inRecursion ? line : trimmedLine);
 
     const children = (
       <>
@@ -171,16 +171,12 @@ export function parse(
       </>
     );
 
-    return inRecursion ? (
-      <span style={{ marginLeft }}>{children}</span>
-    ) : (
-      <div style={{ marginLeft }}>{children}</div>
-    );
+    return inRecursion ? <span>{children}</span> : <div style={{ marginLeft }}>{children}</div>;
   }
 
   // check for bold
   if (/\*\*(.*?)\*\*/.test(trimmedLine)) {
-    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, trimmedLine);
+    const { pre, target, post } = seperator(/\*\*(.*?)\*\*/g, inRecursion ? line : trimmedLine);
     const children = (
       <>
         <span>{parse(pre, options, true)}</span>
@@ -192,16 +188,12 @@ export function parse(
         <span>{parse(post, options, true)}</span>
       </>
     );
-    return inRecursion ? (
-      <span style={{ marginLeft }}>{children}</span>
-    ) : (
-      <div style={{ marginLeft }}>{children}</div>
-    );
+    return inRecursion ? <span>{children}</span> : <div style={{ marginLeft }}>{children}</div>;
   }
 
   // check for italic
   if (/\*(.*?)\*/.test(trimmedLine)) {
-    const { pre, target, post } = seperator(/\*(.*?)\*/g, trimmedLine);
+    const { pre, target, post } = seperator(/\*(.*?)\*/g, inRecursion ? line : trimmedLine);
     const children = (
       <>
         <span>{parse(pre, options, true)}</span>
@@ -214,16 +206,12 @@ export function parse(
         <span>{parse(post, options, true)}</span>
       </>
     );
-    return inRecursion ? (
-      <span style={{ marginLeft }}>{children}</span>
-    ) : (
-      <div style={{ marginLeft }}>{children}</div>
-    );
+    return inRecursion ? <span>{children}</span> : <div style={{ marginLeft }}>{children}</div>;
   }
 
   // check for strike through
   if (/~~(.*?)~~/.test(trimmedLine)) {
-    const { pre, target, post } = seperator(/~~(.*?)~~/g, trimmedLine);
+    const { pre, target, post } = seperator(/~~(.*?)~~/g, inRecursion ? line : trimmedLine);
     const children = (
       <>
         <span>{parse(pre, options, true)}</span>
@@ -231,16 +219,16 @@ export function parse(
         <span>{parse(post, options, true)}</span>
       </>
     );
-    return inRecursion ? (
-      <span style={{ marginLeft }}>{children}</span>
-    ) : (
-      <div style={{ marginLeft }}>{children}</div>
-    );
+    return inRecursion ? <span>{children}</span> : <div style={{ marginLeft }}>{children}</div>;
   }
 
   // check for links
   if (/\[([^\]]+)\]\(([^\)]+)\)/.test(trimmedLine)) {
-    const { pre, target, post } = seperator(/\[([^\]]+)\]\(([^\)]+)\)/g, trimmedLine, 'a');
+    const { pre, target, post } = seperator(
+      /\[([^\]]+)\]\(([^\)]+)\)/g,
+      inRecursion ? line : trimmedLine,
+      'a'
+    );
     const [linkName, href] = target.split(', ');
     const children = (
       <>
@@ -257,22 +245,14 @@ export function parse(
         <span>{parse(post, options, true)}</span>
       </>
     );
-    return inRecursion ? (
-      <span style={{ marginLeft }}>{children}</span>
-    ) : (
-      <div style={{ marginLeft }}>{children}</div>
-    );
+    return inRecursion ? <span>{children}</span> : <div style={{ marginLeft }}>{children}</div>;
   }
 
   // check for line break
   if (!inRecursion && line === '') return <div className="h-[20px]"></div>;
 
   // finally, regular text
-  return inRecursion ? (
-    <span style={{ marginLeft }}>{trimmedLine}</span>
-  ) : (
-    <div style={{ marginLeft }}>{trimmedLine}</div>
-  );
+  return inRecursion ? <span>{line}</span> : <div style={{ marginLeft }}>{trimmedLine}</div>;
 }
 
 function seperator(pattern: RegExp, line: string, targetType: 'n' | 'a' = 'n') {
